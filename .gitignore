@@ -1,6 +1,10 @@
+Tools/bin
+Tools/.settings
+Tools/.classpath
+Tools/.project
+
 *.class
 
 # Package Files #
-*.jar
 *.war
 *.ear
