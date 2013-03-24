@@ -12,7 +12,7 @@ public class RandTools
 		/**
 		 * @return A random boolean value. (either true or false)
 		 */
-		public final static Boolean randBool()
+		public final static Boolean getBool()
 			{
 				Boolean bool;
 				int rnd = (int) (r.nextDouble() * 2) + 1;
@@ -42,7 +42,7 @@ public class RandTools
 		 * @return An integer greater than or equal to the low parameter, and
 		 *         less than or equal to the high parameter.
 		 */
-		public static final int randInt(int low, int high)
+		public static final int getInt(int low, int high)
 			{
 				return (int) (r.nextDouble() * (high - low + 1)) + low;
 			}
@@ -73,7 +73,7 @@ public class RandTools
 		 * @return A double greater than or equal to the low parameter, and less
 		 *         than or equal to the high parameter.
 		 */
-		public static final double randDouble(double low, double high)
+		public static final double getDouble(double low, double high)
 			{
 				double rnd = (r.nextDouble() * (high - low + 0.001)) + low;
 				return rnd > high ? high : rnd;
