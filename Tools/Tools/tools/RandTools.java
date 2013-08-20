@@ -57,7 +57,7 @@ public class RandTools
 		 * @return A float greater than or equal to the low parameter, and less
 		 *         than or equal to the high parameter.
 		 */
-		public static final float randFloat(float low, float high)
+		public static final float getFloat(float low, float high)
 			{
 				float rnd = (float) (r.nextDouble() * (high - low + 0.001)) + low;
 				return rnd > high ? high : rnd;

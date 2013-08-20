@@ -3,7 +3,7 @@ package tools;
 import java.awt.Graphics;
 
 public class DrawTools
-	{
+	{		
 		public static void drawArrow(double x1, double y1, double x2, double y2, Graphics g, int arrowLineLength)
 			{
 				g.drawLine((int) x1, (int) y1, (int) x2, (int) y2);
