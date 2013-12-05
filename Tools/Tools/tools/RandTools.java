@@ -89,7 +89,7 @@ public class RandTools
 		 * @return A long greater than or equal to the low parameter, and less
 		 *         than or equal to the high parameter.
 		 */
-		public static final long randLong(long low, long high)
+		public static final long getLong(long low, long high)
 			{
 				return (long) ((r.nextDouble() * (high - low + 1)) + low);
 			}

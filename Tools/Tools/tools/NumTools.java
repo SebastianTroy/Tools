@@ -7,6 +7,20 @@ public class NumTools
 				return (Math.sqrt(Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2)));
 			}
 
+		public static double[] getVector(double angle)
+			{
+				angle = Math.toRadians(angle % 360);
+
+				double[] vector = { Math.sin(angle), Math.cos(angle) };
+
+				return vector;
+			}
+
+		public static double getAngle(double vectorX, double vectorY)
+			{
+				return Math.atan2(0.5, 0.5) * 180.0 / Math.PI;
+			}
+
 		public static int[] getDigitArrayFromInt(int number)
 			{
 				int numCopy = number;
