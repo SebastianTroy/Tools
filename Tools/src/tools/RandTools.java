@@ -28,7 +28,7 @@ public class RandTools
 		 */
 		public static final double randPercent()
 			{
-				double rnd = (r.nextDouble() * 100.001);
+				double rnd = (r.nextDouble() * (100.0 + Double.MIN_VALUE));
 				return rnd > 100 ? 100 : rnd;
 			}
 
@@ -59,7 +59,7 @@ public class RandTools
 		 */
 		public static final float getFloat(float low, float high)
 			{
-				float rnd = (float) (r.nextDouble() * (high - low + 0.001)) + low;
+				float rnd = (float) (r.nextDouble() * (high - low + Double.MIN_VALUE)) + low;
 				return rnd > high ? high : rnd;
 			}
 
@@ -75,7 +75,7 @@ public class RandTools
 		 */
 		public static final double getDouble(double low, double high)
 			{
-				double rnd = (r.nextDouble() * (high - low + 0.001)) + low;
+				double rnd = (r.nextDouble() * (high - low + Double.MIN_VALUE)) + low;
 				return rnd > high ? high : rnd;
 			}
 
