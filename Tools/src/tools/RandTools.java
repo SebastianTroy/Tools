@@ -14,13 +14,7 @@ public class RandTools
 		 */
 		public final static Boolean getBool()
 			{
-				Boolean bool;
-				int rnd = (int) (r.nextDouble() * 2) + 1;
-				if (rnd == 2)
-					bool = true;
-				else
-					bool = false;
-				return bool;
+				return r.nextBoolean();
 			}
 
 		/**
@@ -59,7 +53,7 @@ public class RandTools
 		 */
 		public static final float getFloat(float low, float high)
 			{
-				float rnd = (float) (r.nextDouble() * (high - low + 0.001)) + low;
+				float rnd = (float) (r.nextDouble() * (high - low + Double.MIN_VALUE)) + low;
 				return rnd > high ? high : rnd;
 			}
 
@@ -75,7 +69,7 @@ public class RandTools
 		 */
 		public static final double getDouble(double low, double high)
 			{
-				double rnd = (r.nextDouble() * (high - low + 0.001)) + low;
+				double rnd = (r.nextDouble() * (high - low + Double.MIN_VALUE)) + low;
 				return rnd > high ? high : rnd;
 			}
 
