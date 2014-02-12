@@ -14,13 +14,7 @@ public class RandTools
 		 */
 		public final static Boolean getBool()
 			{
-				Boolean bool;
-				int rnd = (int) (r.nextDouble() * 2) + 1;
-				if (rnd == 2)
-					bool = true;
-				else
-					bool = false;
-				return bool;
+				return r.nextBoolean();
 			}
 
 		/**
