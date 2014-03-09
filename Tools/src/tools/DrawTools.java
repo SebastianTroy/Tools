@@ -15,8 +15,8 @@ public class DrawTools
 				double x, y, rho = theta + Math.toRadians(40);
 				for (int j = 0; j < 2; j++)
 					{
-						x = x2 - 20 * Math.cos(rho);
-						y = y2 - 20 * Math.sin(rho);
+						x = x2 - arrowLineLength * Math.cos(rho);
+						y = y2 - arrowLineLength * Math.sin(rho);
 						g.drawLine((int) x2, (int) y2, (int) x, (int) y);
 						rho = theta - Math.toRadians(40);
 					}

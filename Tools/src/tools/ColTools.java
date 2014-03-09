@@ -11,9 +11,9 @@ public class ColTools
 		 */
 		public static final Color randColour()
 			{
-				int red = (int) (RandTools.r.nextDouble() * 256);
-				int green = (int) (RandTools.r.nextDouble() * 256);
-				int blue = (int) (RandTools.r.nextDouble() * 256);
+				int red = (int) (Rand.r.nextDouble() * 256);
+				int green = (int) (Rand.r.nextDouble() * 256);
+				int blue = (int) (Rand.r.nextDouble() * 256);
 				Color randomColour = new Color(red, green, blue);
 				return randomColour;
 			}
@@ -25,10 +25,10 @@ public class ColTools
 		 */
 		public static final Color randAlphaColour()
 			{
-				int red = (int) (RandTools.r.nextDouble() * 256);
-				int green = (int) (RandTools.r.nextDouble() * 256);
-				int blue = (int) (RandTools.r.nextDouble() * 256);
-				int alpha = (int) (RandTools.r.nextDouble() * 256);
+				int red = (int) (Rand.r.nextDouble() * 256);
+				int green = (int) (Rand.r.nextDouble() * 256);
+				int blue = (int) (Rand.r.nextDouble() * 256);
+				int alpha = (int) (Rand.r.nextDouble() * 256);
 				Color randomColour = new Color(red, green, blue, alpha);
 				return randomColour;
 			}
