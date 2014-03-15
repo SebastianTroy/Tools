@@ -31,9 +31,9 @@ public class WindowTools
 		 */
 		public static void debugWindow(String message)
 			{
-				JOptionPane.showMessageDialog(null, message, Thread.currentThread().getStackTrace()[2].toString(), JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, message, Thread.currentThread().getStackTrace()[3].toString(), JOptionPane.ERROR_MESSAGE);
 
-				System.out.println("DEBUG: " + Thread.currentThread().getStackTrace()[2]);
+				System.out.println("DEBUG: " + Thread.currentThread().getStackTrace()[3]);
 				System.out.println(message);
 			}
 

@@ -45,6 +45,8 @@ public class Rand
 		 */
 		public static final int int_(int low, int high)
 			{
+				if (low == high)
+					return low;
 				return low + r.nextInt(Math.abs(high - low));
 			}
 
