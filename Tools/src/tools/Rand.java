@@ -35,13 +35,28 @@ public class Rand
 			}
 
 		/**
+		 * Returns a random integer between 0 (inclusive) and high (exclusive).
+		 * 
+		 * @param high
+		 *            - the upper end of the return range
+		 * @return An integer greater than or equal to 0, and less than the high parameter.
+		 */
+		public static final int int_(int high)
+			{
+				if (high < 0)
+					return -r.nextInt(-high);
+				else
+					return r.nextInt(high);
+			}
+
+		/**
 		 * Returns a random integer between low (inclusive) and high (exclusive). Note that strange things may happen if low > high.
 		 * 
 		 * @param low
 		 *            - the lower end of the return range
 		 * @param high
 		 *            - the upper end of the return range
-		 * @return An integer greater than or equal to the low parameter, and less than or equal to the high parameter.
+		 * @return An integer greater than or equal to the low parameter, and less than the high parameter.
 		 */
 		public static final int int_(int low, int high)
 			{
@@ -57,7 +72,7 @@ public class Rand
 		 *            - the lower end of the return range
 		 * @param high
 		 *            - the upper end of the return range
-		 * @return A float greater than or equal to the low parameter, and less than or equal to the high parameter.
+		 * @return A float greater than or equal to the low parameter, and less than the high parameter.
 		 */
 		public static final float float_(float low, float high)
 			{
@@ -71,7 +86,7 @@ public class Rand
 		 *            - the lower end of the return range
 		 * @param high
 		 *            - the upper end of the return range
-		 * @return A double greater than or equal to the low parameter, and less than or equal to the high parameter.
+		 * @return A double greater than or equal to the low parameter, and less than the high parameter.
 		 */
 		public static final double double_(double low, double high)
 			{
@@ -85,7 +100,7 @@ public class Rand
 		 *            - the lower end of the return range
 		 * @param high
 		 *            - the upper end of the return range
-		 * @return A long greater than or equal to the low parameter, and less than or equal to the high parameter.
+		 * @return A long greater than or equal to the low parameter, and less than the high parameter.
 		 */
 		public static final long long_(long low, long high)
 			{
