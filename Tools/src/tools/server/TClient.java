@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.UncheckedIOException;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 import tools.WindowTools;
 
@@ -19,6 +20,7 @@ import tools.WindowTools;
 public abstract class TClient<DataType> implements Runnable
 	{
 		private Socket socket;
+		private boolean isConnected = true;
 
 		/**
 		 * 
@@ -34,13 +36,20 @@ public abstract class TClient<DataType> implements Runnable
 					{
 						socket = new Socket(hostAddress, port);
 					}
+				catch (UnknownHostException e)
+					{
+						/* Do nothing, incorrect host name entered */
+						isConnected = false;
+						WindowTools.debugWindow("Invalid host name.");
+					}
 				catch (Exception e)
 					{
-						WindowTools.debugWindow("Could not connect to server/n");
+						isConnected = false;
+						WindowTools.debugWindow("Could not connect to server.");
 						e.printStackTrace();
 					}
 
-				if (socket.isConnected())
+				if (isConnected)
 					new Thread(this).start();
 			}
 
@@ -53,9 +62,10 @@ public abstract class TClient<DataType> implements Runnable
 			{
 				try
 					{
-						ObjectInputStream stream_reader = new ObjectInputStream(socket.getInputStream());
 						while (true)
 							{
+								ObjectInputStream stream_reader = new ObjectInputStream(socket.getInputStream());
+
 								processObject((DataType) stream_reader.readObject());
 							}
 					}
@@ -97,13 +107,21 @@ public abstract class TClient<DataType> implements Runnable
 		protected abstract void processObject(DataType object);
 
 		/**
+		 * @return - true if there is a valid connection to a {@link TServer} socket.
+		 */
+		public final boolean isConnected()
+			{
+				return (isConnected && socket.isConnected());
+			}
+
+		/**
 		 * @return - Returns the ip address of the {@link TClient} socket as a String.
 		 */
 		public final String getClientAddress()
 			{
 				return socket.getLocalAddress().getHostAddress();
 			}
-		
+
 		/**
 		 * @return - Returns the ip address of the {@link TServer} socket as a String.
 		 */

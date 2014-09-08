@@ -35,11 +35,12 @@ public class ChatClient extends TClient<String>
 		 * @param hostAddress
 		 *            - The ip address of the host you wish to connect to.
 		 * @param clientName
-		 *            - The String that will be prepended onto every message in the form "clientName:\n message"
+		 *            - The String that will be prepended onto every message in the form "clientName:message"
 		 */
 		public ChatClient(String hostAddress, String clientName)
 			{
 				super(hostAddress, ChatServer.PORT);
+				clientName.replace(':', '.');
 				this.clientName = ":" + clientName;
 			}
 
@@ -55,7 +56,7 @@ public class ChatClient extends TClient<String>
 		/**
 		 * Sends a message to the server, prepending the ip address and the {@link ChatClient#clientName} to the message.
 		 * <p>
-		 * "ip address:client name:\n message"
+		 * "ip address:client name:message"
 		 * 
 		 * @param message
 		 *            - The message to be sent.
@@ -64,11 +65,10 @@ public class ChatClient extends TClient<String>
 		public final void sendMessage(String message)
 			{
 				// Ignore null or empty messages
-				if (message == null || message.length() < 1)
+				if (message == null || message.length() < 2)
 					return;
 
-				message = getClientAddress() + clientName + ":\n" + message;
-
+				message = getClientAddress() + clientName + ":" + message;
 				sendObject(message);
 			}
 
