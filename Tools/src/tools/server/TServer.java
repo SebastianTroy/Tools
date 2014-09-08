@@ -3,9 +3,13 @@ package tools.server;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
+
+import tools.WindowTools;
 
 /**
  * Once started this Server will continue to listen for {@link TClient}s until:
@@ -35,16 +39,25 @@ public abstract class TServer implements Runnable
 			{
 				try
 					{
-						serverSocket = new ServerSocket(port);
+						serverSocket = new ServerSocket();
+						serverSocket.setReuseAddress(true);
+						serverSocket.bind(new InetSocketAddress(port));
 					}
 				catch (IOException e)
 					{
+						WindowTools.informationWindow("Server failed to start", "Error");
+						running = false;
 						e.printStackTrace();
 					}
 
-				// Start the chat server on a new thread
-				thread = new Thread(this);
-				thread.start();
+				if (running)
+					{
+						// Start the chat server on a new thread
+						thread = new Thread(this);
+						thread.start();
+					}
+				else
+					thread = null;
 			}
 
 		/**
@@ -67,6 +80,10 @@ public abstract class TServer implements Runnable
 								// Start a thread to deal with this new connection
 								Thread thread = new Thread(new Connection(socket));
 								thread.start();
+							}
+						catch (SocketException e)
+							{
+								// Do nothing, this is expected to occur whenever the server is stopped
 							}
 						catch (IOException e)
 							{
@@ -100,19 +117,18 @@ public abstract class TServer implements Runnable
 
 		/**
 		 * This method causes the server to finish sending its current message and then to finish executing.
-		 * 
-		 * @param notify
-		 *            - if <code>true</code> A message is sent to all connected clients, notifying them that the server has closed.
 		 */
-		public final void closeServer()
+		protected final void closeServer()
 			{
-				// Tell the Server to stop processing messages
+				// Tell the Server to stop processing new connections
 				running = false;
 
 				try
 					{
-						// Close the sever (will cause 
+						// Close the sever (will cause
 						serverSocket.close();
+						for (Connection c : clients)
+							c.socket.close();
 
 						// Join this thread to the one that called this method
 						thread.join();
@@ -143,14 +159,18 @@ public abstract class TServer implements Runnable
 					{
 						try
 							{
-								// prepare to receive String inputs from the clients
-								ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
-
 								while (true)
 									{
+										// prepare to receive String inputs from the clients
+										ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+
 										// Wait for another object to be sent then pass to every client (including the one that sent it)
 										sendToAll(ois.readObject());
 									}
+							}
+						catch (SocketException e)
+							{
+								// Do nothing, this is expected to occur whenever the server is stopped
 							}
 						catch (IOException | ClassNotFoundException e)
 							{
