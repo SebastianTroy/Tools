@@ -23,12 +23,13 @@ public abstract class TServer implements Runnable
 		private final ArrayList<Connection> clients = new ArrayList<Connection>();
 
 		private final Thread thread;
-		private boolean running = true, finished = false;
+		private boolean running = true;
 
 		/**
 		 * Starts the server with a {@link ServerSocket} listening to the specified port.
 		 * 
-		 * @param port - The port to which {@link TClient}s should connect.
+		 * @param port
+		 *            - The port to which {@link TClient}s should connect.
 		 */
 		protected TServer(int port)
 			{
@@ -72,18 +73,6 @@ public abstract class TServer implements Runnable
 								e.printStackTrace();
 							}
 					}
-				try
-					{
-						serverSocket.close();
-					}
-				catch (IOException e)
-					{
-						e.printStackTrace();
-					}
-				finally
-					{
-						finished = true;
-					}
 			}
 
 		/**
@@ -120,16 +109,15 @@ public abstract class TServer implements Runnable
 				// Tell the Server to stop processing messages
 				running = false;
 
-				// Wait until the run method has been completed
-				while (!finished)
-					;
-
-				// Join this thread to the one that called this method
 				try
 					{
+						// Close the sever (will cause 
+						serverSocket.close();
+
+						// Join this thread to the one that called this method
 						thread.join();
 					}
-				catch (InterruptedException e)
+				catch (IOException | InterruptedException e)
 					{
 						e.printStackTrace();
 					}
