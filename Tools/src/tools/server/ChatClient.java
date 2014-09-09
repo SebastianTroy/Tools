@@ -16,7 +16,7 @@ import tools.Rand;
 public class ChatClient extends TClient<String>
 	{
 		private LinkedBlockingQueue<String> messages = new LinkedBlockingQueue<String>();
-		private final String clientName;
+		private String clientName, clientID;
 
 		/**
 		 * Connect to the host at the specified address and give the client a random 5 letter digit as a name.
@@ -41,22 +41,26 @@ public class ChatClient extends TClient<String>
 			{
 				super(hostAddress, ChatServer.PORT);
 				clientName.replace(':', '.');
-				this.clientName = ":" + clientName;
+				this.clientName = clientName;
 			}
 
 		/**
 		 * Whenever we receive a String from the server, stick it into an array until it is asked for.
 		 */
 		@Override
-		protected void processObject(String message)
+		protected final void processObject(long senderID, String message, boolean personal)
 			{
-				messages.add(message);
+				// If server is contacting only us, the message is our unique ID
+				if (personal)
+					clientID = message;
+				else
+					messages.add(message);
 			}
 
 		/**
 		 * Sends a message to the server, prepending the ip address and the {@link ChatClient#clientName} to the message.
 		 * <p>
-		 * "ip address:client name:message"
+		 * "uniqueID:client name:message"
 		 * 
 		 * @param message
 		 *            - The message to be sent.
@@ -68,7 +72,7 @@ public class ChatClient extends TClient<String>
 				if (message == null || message.length() < 2)
 					return;
 
-				message = getClientAddress() + clientName + ":" + message;
+				message = clientID + ":" + clientName + ":" + message;
 				sendObject(message);
 			}
 
@@ -80,5 +84,10 @@ public class ChatClient extends TClient<String>
 				ArrayList<String> m = new ArrayList<String>();
 				messages.drainTo(m);
 				return m;
+			}
+
+		public final void setClientName(String clientName)
+			{
+				this.clientName = clientName;
 			}
 	}

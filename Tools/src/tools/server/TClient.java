@@ -1,9 +1,11 @@
 package tools.server;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.UncheckedIOException;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -34,7 +36,16 @@ public abstract class TClient<DataType> implements Runnable
 			{
 				try
 					{
+						// Connect t server
 						socket = new Socket(hostAddress, port);
+						// Check that the server actually 
+						ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+						oos.writeObject(new TString("Testing"));
+						oos.flush();
+					}
+				catch (ConnectException e)
+					{
+						WindowTools.informationWindow("Server refused connection", "Warning");
 					}
 				catch (UnknownHostException e)
 					{
@@ -66,7 +77,8 @@ public abstract class TClient<DataType> implements Runnable
 							{
 								ObjectInputStream stream_reader = new ObjectInputStream(socket.getInputStream());
 
-								Object object = stream_reader.readObject();
+								TPacket packet = (TPacket) stream_reader.readObject();
+								Object object = packet.object;
 
 								// If the object is a secret message from the server
 								if (object instanceof TString)
@@ -80,14 +92,14 @@ public abstract class TClient<DataType> implements Runnable
 										continue;
 									}
 
-								processObject((DataType) object);
+								processObject(packet.uniqueID, (DataType) object, packet.personal);
 							}
 					}
-				catch (SocketException e)
+				catch (EOFException | SocketException e)
 					{
 						// If the client has disconnected while we are waiting for an object
 						if (e.toString().equals("java.net.SocketException: Connection reset"))
-							WindowTools.informationWindow("Server Disconnected", "ERROR");
+							WindowTools.informationWindow("Server has Disconnected", "WARNING");
 					}
 				catch (IOException | UncheckedIOException | ClassNotFoundException e)
 					{
@@ -124,7 +136,7 @@ public abstract class TClient<DataType> implements Runnable
 		 * @param object
 		 *            - The object sent to the client from the server
 		 */
-		protected abstract void processObject(DataType object);
+		protected abstract void processObject(long senderID, DataType object, boolean personal);
 
 		/**
 		 * @return - true if there is a valid connection to a {@link TServer} socket.

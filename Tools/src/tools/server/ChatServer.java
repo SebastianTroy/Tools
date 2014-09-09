@@ -21,26 +21,27 @@ public class ChatServer extends TServer
 		public final void closeServer(boolean notify)
 			{
 				if (notify)
-					sendToAll("Server has disconnected");
+					sendToAll(0L, "Server has disconnected");
 
 				super.closeServer();
 			}
 
 		/**
-		 * Not interested in tracking which IP's have joined to us, simply return that we are happy for more clients to join.
+		 * Send a private message to the client, informing it of the private ID it was allocated. Now the client will always send out messages starting with its
+		 * privateID.
 		 */
 		@Override
-		protected boolean clientConnected(String clientIP)
+		protected boolean clientConnected(long uniqueID)
 			{
+				// Inform the client of its uniqueID (0L is an ID reserved for the server).
+				sendToClient(0L, "" + uniqueID, uniqueID);
 				return true;
 			}
 
 		/**
-		 * Tell everyone someone disconnected
+		 * Do nothing, rely on users to say goodbye
 		 */
 		@Override
-		protected void clientDisconnected(String clientIP)
-			{
-				sendToAll(clientIP + "::||disconnected|||");
-			}
+		protected void clientDisconnected(long uniqueID)
+			{}
 	}

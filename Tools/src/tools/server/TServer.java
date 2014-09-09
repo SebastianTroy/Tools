@@ -10,6 +10,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import tools.Rand;
 import tools.WindowTools;
 
 /**
@@ -25,10 +26,11 @@ public abstract class TServer implements Runnable
 	{
 		private ServerSocket serverSocket;
 
-		private final LinkedBlockingQueue<Connection> clients = new LinkedBlockingQueue<Connection>();
+		protected final LinkedBlockingQueue<Connection> clients = new LinkedBlockingQueue<Connection>();
 
 		private final Thread thread;
-		private boolean running = false, allowConnections = true;
+		private boolean running = false;
+		protected boolean allowConnections = true;
 
 		/**
 		 * Starts the server with a {@link ServerSocket} listening to the specified port.
@@ -70,42 +72,46 @@ public abstract class TServer implements Runnable
 			{
 				while (running)
 					{
-						// The first connection is always allowed, after then, each connection decides if another is allowed
-						if (allowConnections)
-							try
-								{
-									// Wait for someone to connect to us
-									Socket socket = serverSocket.accept();
-									
-									Connection connection = new Connection(socket);
-									
-									// Create a new connection
-									clients.add(connection);
+						try
+							{
+								// Wait for someone to connect to us
+								Socket socket = serverSocket.accept();
 
-									// Start a thread to deal with this new connection
-									Thread thread = new Thread(connection);
-									thread.start();
-									// Notify the server of the new connection and ask if another connection is acceptable
-									allowConnections = clientConnected(socket.getInetAddress().toString());
-								}
-							catch (SocketException e)
-								{
-									// Do nothing, this is expected to occur whenever the server is stopped
-								}
-							catch (IOException e)
-								{
-									e.printStackTrace();
-								}
-						else
-							// Wait to see if we can accept connections in 5 seconds
-							try
-								{
-									Thread.sleep(5000);
-								}
-							catch (InterruptedException e)
-								{
-									e.printStackTrace();
-								}
+								// The first connection is always allowed, after then, each connection decides if another is allowed
+								if (allowConnections)
+									{
+										Connection connection = new Connection(socket);
+										while (true)
+											{
+												for (Connection c : clients)
+													if (c.uniqueID == connection.uniqueID)
+														{
+															connection = new Connection(socket);
+															continue;
+														}
+												break;
+											}
+
+										// Create a new connection
+										clients.add(connection);
+
+										// Start a thread to deal with this new connection
+										Thread thread = new Thread(connection);
+										thread.start();
+										// Notify the server of the new connection and ask if another connection is acceptable
+										allowConnections = clientConnected(connection.uniqueID);
+									}
+								else
+									socket.close();
+							}
+						catch (SocketException e)
+							{
+								// Do nothing, this is expected to occur whenever the server is stopped
+							}
+						catch (IOException e)
+							{
+								e.printStackTrace();
+							}
 					}
 			}
 
@@ -115,6 +121,23 @@ public abstract class TServer implements Runnable
 		public final boolean isRunning()
 			{
 				return running;
+			}
+
+		/**
+		 * @return - <code>true</code> if this server is currently listening for and connecting to {@link TClient}s.
+		 */
+		public final boolean isAcceptingClients()
+			{
+				return allowConnections;
+			}
+
+		/**
+		 * @param accept
+		 *            - <code>true</code> if this server should listen for and connect to {@link TClient}s.
+		 */
+		public final void setAcceptClients(boolean accept)
+			{
+				allowConnections = accept;
 			}
 
 		/**
@@ -143,12 +166,13 @@ public abstract class TServer implements Runnable
 			}
 
 		/**
-		 * This method appends the ip address of the sender to the start of the message and then sends it to all connected clients.
+		 * This method sends a copy of specified object to all connected {@link TClient}s.
 		 * 
 		 * @param object
-		 *            - The message recieved from a client, which is to be pushed to all connected clients.
+		 *            - An Object which each {@link TClient} will receive a copy of.
+		 * @note - TClient&ltT>s can only accept Objects of type T.
 		 */
-		protected final synchronized void sendToAll(Object object)
+		protected final synchronized void sendToAll(long senderID, Object object)
 			{
 				for (Connection c : clients)
 					{
@@ -156,8 +180,35 @@ public abstract class TServer implements Runnable
 							try
 								{
 									ObjectOutputStream oos = new ObjectOutputStream(c.socket.getOutputStream());
-									oos.writeObject(object);
+									oos.writeObject(new TPacket(senderID, object, false));
 									oos.flush();
+								}
+							catch (Exception e)
+								{
+									e.printStackTrace();
+								}
+					}
+			}
+
+		/**
+		 * This method sends a copy of specified object to a specified {@link TClient}.
+		 * 
+		 * @param object
+		 *            - An Object which the {@link TClient} will receive a copy of.
+		 * @param clientID
+		 *            - The unique ID of the {@link TClient} to which the object should be sent.
+		 */
+		protected final synchronized void sendToClient(long senderID, Object object, long clientID)
+			{
+				for (Connection c : clients)
+					{
+						if (c.uniqueID == clientID && c.acceptingObjects)
+							try
+								{
+									ObjectOutputStream oos = new ObjectOutputStream(c.socket.getOutputStream());
+									oos.writeObject(new TPacket(senderID, object, true));
+									oos.flush();
+									break;
 								}
 							catch (Exception e)
 								{
@@ -174,14 +225,14 @@ public abstract class TServer implements Runnable
 		 *            - A string of the IP address of the client
 		 * @return - <code>true</code> if the server should listen for a new connection.
 		 */
-		protected abstract boolean clientConnected(String clientIP);
+		protected abstract boolean clientConnected(long uniqueID);
 
 		/**
 		 * Each time a client disconnects this method is called.
 		 * 
 		 * @param clientIP
 		 */
-		protected abstract void clientDisconnected(String clientIP);
+		protected abstract void clientDisconnected(long uniqueID);
 
 		/**
 		 * One of these classes is created for each client that connects to the chat server. It listens for input continuously and when it receives a message,
@@ -189,24 +240,23 @@ public abstract class TServer implements Runnable
 		 * 
 		 * @author Sebastian Troy
 		 */
-		private class Connection extends Thread
+		protected class Connection extends Thread
 			{
-				private final Socket socket;
-				private final String ipString;
+				public final long uniqueID = Rand.long_(1L, Long.MAX_VALUE);
+				protected final Socket socket;
 				private boolean acceptingObjects = true, confirmedConnection = true;
 
 				private Connection(Socket socket)
 					{
 						this.socket = socket;
-						ipString = socket.getInetAddress().toString();
 					}
 
 				private final void disconnected()
 					{
 						acceptingObjects = false;
 						clients.remove(this);
-						
-						clientDisconnected(ipString);
+
+						clientDisconnected(uniqueID);
 					}
 
 				@Override
@@ -221,8 +271,6 @@ public abstract class TServer implements Runnable
 									{
 										try
 											{
-												if (!acceptingObjects)
-													System.out.println("oops");
 												// prepare to receive String inputs from the clients
 												ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
@@ -245,7 +293,7 @@ public abstract class TServer implements Runnable
 														continue;
 													}
 												// Wait for another object to be sent then pass to every client (including the one that sent it)
-												sendToAll(object);
+												sendToAll(uniqueID, object);
 
 												confirmedConnection = true;
 											}
@@ -256,7 +304,7 @@ public abstract class TServer implements Runnable
 												if (confirmedConnection)
 													{
 														confirmedConnection = false;
-														sendToAll(new TString("Server: Are_You_There?"));
+														sendToAll(uniqueID, new TString("Server: Are_You_There?"));
 													}
 												else
 													{
