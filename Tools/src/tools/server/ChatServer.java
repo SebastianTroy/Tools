@@ -25,4 +25,22 @@ public class ChatServer extends TServer
 
 				super.closeServer();
 			}
+
+		/**
+		 * Not interested in tracking which IP's have joined to us, simply return that we are happy for more clients to join.
+		 */
+		@Override
+		protected boolean clientConnected(String clientIP)
+			{
+				return true;
+			}
+
+		/**
+		 * Tell everyone someone disconnected
+		 */
+		@Override
+		protected void clientDisconnected(String clientIP)
+			{
+				sendToAll(clientIP + "::||disconnected|||");
+			}
 	}

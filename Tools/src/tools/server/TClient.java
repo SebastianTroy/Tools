@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.UncheckedIOException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 
 import tools.WindowTools;
@@ -31,7 +32,6 @@ public abstract class TClient<DataType> implements Runnable
 		 */
 		public TClient(String hostAddress, int port)
 			{
-
 				try
 					{
 						socket = new Socket(hostAddress, port);
@@ -66,8 +66,28 @@ public abstract class TClient<DataType> implements Runnable
 							{
 								ObjectInputStream stream_reader = new ObjectInputStream(socket.getInputStream());
 
-								processObject((DataType) stream_reader.readObject());
+								Object object = stream_reader.readObject();
+
+								// If the object is a secret message from the server
+								if (object instanceof TString)
+									{
+										TString objectString = (TString) object;
+										if (objectString.string.equals("Server: Are_You_There?"))
+											{
+												// Confirms presence of client
+												sendObject(new TString("Client_Still_Here_0123456789"));
+											}
+										continue;
+									}
+
+								processObject((DataType) object);
 							}
+					}
+				catch (SocketException e)
+					{
+						// If the client has disconnected while we are waiting for an object
+						if (e.toString().equals("java.net.SocketException: Connection reset"))
+							WindowTools.informationWindow("Server Disconnected", "ERROR");
 					}
 				catch (IOException | UncheckedIOException | ClassNotFoundException e)
 					{
@@ -112,6 +132,11 @@ public abstract class TClient<DataType> implements Runnable
 		public final boolean isConnected()
 			{
 				return (isConnected && socket.isConnected());
+			}
+
+		public final void disconnect()
+			{
+				sendObject(new TString("Client_Disconnected_0123456789"));
 			}
 
 		/**

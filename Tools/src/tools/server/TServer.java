@@ -7,7 +7,8 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
+import java.net.SocketTimeoutException;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import tools.WindowTools;
 
@@ -24,10 +25,10 @@ public abstract class TServer implements Runnable
 	{
 		private ServerSocket serverSocket;
 
-		private final ArrayList<Connection> clients = new ArrayList<Connection>();
+		private final LinkedBlockingQueue<Connection> clients = new LinkedBlockingQueue<Connection>();
 
 		private final Thread thread;
-		private boolean running = true;
+		private boolean running = false, allowConnections = true;
 
 		/**
 		 * Starts the server with a {@link ServerSocket} listening to the specified port.
@@ -42,11 +43,11 @@ public abstract class TServer implements Runnable
 						serverSocket = new ServerSocket();
 						serverSocket.setReuseAddress(true);
 						serverSocket.bind(new InetSocketAddress(port));
+						running = true;
 					}
 				catch (IOException e)
 					{
 						WindowTools.informationWindow("Server failed to start", "Error");
-						running = false;
 						e.printStackTrace();
 					}
 
@@ -69,50 +70,51 @@ public abstract class TServer implements Runnable
 			{
 				while (running)
 					{
-						try
-							{
-								// Wait for someone to connect to us
-								Socket socket = serverSocket.accept();
-								// Create a new connection
-								Connection connection = new Connection(socket);
-								clients.add(connection);
+						// The first connection is always allowed, after then, each connection decides if another is allowed
+						if (allowConnections)
+							try
+								{
+									// Wait for someone to connect to us
+									Socket socket = serverSocket.accept();
+									
+									Connection connection = new Connection(socket);
+									
+									// Create a new connection
+									clients.add(connection);
 
-								// Start a thread to deal with this new connection
-								Thread thread = new Thread(new Connection(socket));
-								thread.start();
-							}
-						catch (SocketException e)
-							{
-								// Do nothing, this is expected to occur whenever the server is stopped
-							}
-						catch (IOException e)
-							{
-								e.printStackTrace();
-							}
+									// Start a thread to deal with this new connection
+									Thread thread = new Thread(connection);
+									thread.start();
+									// Notify the server of the new connection and ask if another connection is acceptable
+									allowConnections = clientConnected(socket.getInetAddress().toString());
+								}
+							catch (SocketException e)
+								{
+									// Do nothing, this is expected to occur whenever the server is stopped
+								}
+							catch (IOException e)
+								{
+									e.printStackTrace();
+								}
+						else
+							// Wait to see if we can accept connections in 5 seconds
+							try
+								{
+									Thread.sleep(5000);
+								}
+							catch (InterruptedException e)
+								{
+									e.printStackTrace();
+								}
 					}
 			}
 
 		/**
-		 * This method appends the ip address of the sender to the start of the message and then sends it to all connected clients.
-		 * 
-		 * @param object
-		 *            - The message recieved from a client, which is to be pushed to all connected clients.
+		 * @return - <code>true</code> if the {@link TServer} started successfully and has not yet been closed.
 		 */
-		protected final synchronized void sendToAll(Object object)
+		public final boolean isRunning()
 			{
-				for (Connection c : clients)
-					{
-						try
-							{
-								ObjectOutputStream oos = new ObjectOutputStream(c.socket.getOutputStream());
-								oos.writeObject(object);
-								oos.flush();
-							}
-						catch (Exception e)
-							{
-								e.printStackTrace();
-							}
-					}
+				return running;
 			}
 
 		/**
@@ -141,7 +143,48 @@ public abstract class TServer implements Runnable
 			}
 
 		/**
-		 * One of these classes is created for each client that connects to the chat server. It listens for input continuously and when it recieves a message,
+		 * This method appends the ip address of the sender to the start of the message and then sends it to all connected clients.
+		 * 
+		 * @param object
+		 *            - The message recieved from a client, which is to be pushed to all connected clients.
+		 */
+		protected final synchronized void sendToAll(Object object)
+			{
+				for (Connection c : clients)
+					{
+						if (c.acceptingObjects)
+							try
+								{
+									ObjectOutputStream oos = new ObjectOutputStream(c.socket.getOutputStream());
+									oos.writeObject(object);
+									oos.flush();
+								}
+							catch (Exception e)
+								{
+									e.printStackTrace();
+								}
+					}
+			}
+
+		/**
+		 * Each time a client connects, this method is called. If the server should be ready for a new connection immediately, this should return
+		 * <code>true</code>. If not the server can be told to accept connections again at a later time.
+		 * 
+		 * @param clientIP
+		 *            - A string of the IP address of the client
+		 * @return - <code>true</code> if the server should listen for a new connection.
+		 */
+		protected abstract boolean clientConnected(String clientIP);
+
+		/**
+		 * Each time a client disconnects this method is called.
+		 * 
+		 * @param clientIP
+		 */
+		protected abstract void clientDisconnected(String clientIP);
+
+		/**
+		 * One of these classes is created for each client that connects to the chat server. It listens for input continuously and when it receives a message,
 		 * sends it out to every connected client.
 		 * 
 		 * @author Sebastian Troy
@@ -149,10 +192,21 @@ public abstract class TServer implements Runnable
 		private class Connection extends Thread
 			{
 				private final Socket socket;
+				private final String ipString;
+				private boolean acceptingObjects = true, confirmedConnection = true;
 
 				private Connection(Socket socket)
 					{
 						this.socket = socket;
+						ipString = socket.getInetAddress().toString();
+					}
+
+				private final void disconnected()
+					{
+						acceptingObjects = false;
+						clients.remove(this);
+						
+						clientDisconnected(ipString);
 					}
 
 				@Override
@@ -160,18 +214,66 @@ public abstract class TServer implements Runnable
 					{
 						try
 							{
+								// If no data is recieved for 5 seconds, stop waiting
+								socket.setSoTimeout(5000);
+
 								while (true)
 									{
-										// prepare to receive String inputs from the clients
-										ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+										try
+											{
+												if (!acceptingObjects)
+													System.out.println("oops");
+												// prepare to receive String inputs from the clients
+												ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-										// Wait for another object to be sent then pass to every client (including the one that sent it)
-										sendToAll(ois.readObject());
+												Object object = ois.readObject();
+
+												// Check to see if client has disconnected or is confirming presence
+												if (object instanceof TString)
+													{
+														TString objectString = (TString) object;
+														if (objectString.string.equals("Client_Disconnected_0123456789"))
+															{
+																disconnected();
+																socket.close();
+																break;
+															}
+														else if (objectString.string.equals("Client_Still_Here_0123456789"))
+															{
+																confirmedConnection = true;
+															}
+														continue;
+													}
+												// Wait for another object to be sent then pass to every client (including the one that sent it)
+												sendToAll(object);
+
+												confirmedConnection = true;
+											}
+										// We are expecting these every 5 seconds or so, and don't want to leave the while loop
+										catch (SocketTimeoutException e)
+											{
+												// no data recieved for 5 seconds, check if client still connected
+												if (confirmedConnection)
+													{
+														confirmedConnection = false;
+														sendToAll(new TString("Server: Are_You_There?"));
+													}
+												else
+													{
+														disconnected();
+													}
+											}
 									}
 							}
 						catch (SocketException e)
 							{
-								// Do nothing, this is expected to occur whenever the server is stopped
+								// If the client has disconnected while we are waiting for an object
+								if (e.toString().equals("java.net.SocketException: Connection reset"))
+									disconnected();
+								// This is expected to occur whenever the server is stopped
+								// Only print if server should still be running
+								else if (running)
+									e.printStackTrace();
 							}
 						catch (IOException | ClassNotFoundException e)
 							{
