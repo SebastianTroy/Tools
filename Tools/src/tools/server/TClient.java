@@ -46,6 +46,7 @@ public abstract class TClient<DataType> implements Runnable
 				catch (ConnectException e)
 					{
 						WindowTools.informationWindow("Server refused connection", "Warning");
+						isConnected = false;
 					}
 				catch (UnknownHostException e)
 					{
