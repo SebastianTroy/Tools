@@ -38,6 +38,63 @@ public class NumTools
 				return Math.atan2(0.5, 0.5) * 180.0 / Math.PI;
 			}
 
+		public static int getSumOfList(int[] list)
+			{
+				int total = 0;
+				for (int i = 0; i < list.length; i++)
+					total += list[i];
+				return total;
+			}
+
+		public static double getSumOfList(double[] list)
+			{
+				double total = 0;
+				for (int i = 0; i < list.length; i++)
+					total += list[i];
+				return total;
+			}
+
+		/**
+		 * @param list
+		 *            - The list of values to be moderated.
+		 * @param value
+		 *            - The value that the sum of the list should be.
+		 * @return A copy of the list where all values have been equally moderated up or down so that they summate to the given value.
+		 */
+		public static double[] makeSumOfListEqual(double[] list, double value)
+			{
+				return makeSumOfListEqual(list, value, 0);
+			}
+
+		/**
+		 * @param list
+		 *            - The list of values to be moderated.
+		 * @param value
+		 *            - The value that the sum of the list should be.
+		 * @param startIndex
+		 *            - The operation will only apply to members of the list after this index.
+		 * @return A copy of the list where all values have been equally moderated up or down so that they summate to the given value.
+		 */
+		public static double[] makeSumOfListEqual(double[] list, double value, int startIndex)
+			{
+				if (startIndex < 0)
+					startIndex = 0;
+				else if (startIndex > list.length)
+					startIndex = list.length;
+
+				// Calculate the total
+				double total = 0;
+				for (int i = startIndex; i < list.length; i++)
+					total += list[i];
+				// Modify the total so that next operation makes the values summate to value (instead of 1)
+				total *= (1.0 / value);
+				// Now make all the proportions add to value
+				for (int i = startIndex; i < list.length; i++)
+					list[i] /= total;
+
+				return list;
+			}
+
 		public static int[] getDigitArrayFromInt(int number)
 			{
 				int numCopy = number;

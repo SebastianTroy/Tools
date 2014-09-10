@@ -11,11 +11,28 @@ public class ColTools
 		 */
 		public static final Color randColour()
 			{
-				int red = (int) (Rand.r.nextDouble() * 256);
-				int green = (int) (Rand.r.nextDouble() * 256);
-				int blue = (int) (Rand.r.nextDouble() * 256);
-				Color randomColour = new Color(red, green, blue);
-				return randomColour;
+				return new Color(Rand.r.nextInt(16777217));
+			}
+
+		/**
+		 * Returns a random {@link Color} with no alpha value, where the R, G & B values average a specified brightness.
+		 * 
+		 * @param brightness
+		 *            - 0 will return {@link Color#BLACK}, 255 will return {@link Color#WHITE}. Any value between will produce a random colour which has the
+		 *            same average luminocity as <code>new Color(brightness, brightness, brightness);</code>.
+		 * 
+		 * @return a {@link Color} object which holds a random colour with colour values averaging a specified brightness.
+		 */
+		public static final Color randColour(int brightness)
+			{
+				if (brightness <= 0)
+					return Color.BLACK;
+				else if (brightness >= 255)
+					return Color.WHITE;
+				
+				int[] rgbValues = Rand.getIntsWithAverage(3, 0, 255, brightness);
+			
+				return new Color(rgbValues[0], rgbValues[1], rgbValues[2]);
 			}
 
 		/**
@@ -34,9 +51,7 @@ public class ColTools
 			}
 
 		/**
-		 * This method takes three integer values and checks that they are
-		 * within 0 - 255 before returning a {@link Color} composed of these
-		 * values.
+		 * This method takes three integer values and checks that they are within 0 - 255 before returning a {@link Color} composed of these values.
 		 * 
 		 * @param red
 		 *            - the red component to be checked.
@@ -67,8 +82,7 @@ public class ColTools
 			}
 
 		/**
-		 * This method takes four integer values and checks that they are within
-		 * 0 - 255 before returning a {@link Color} composed of these values.
+		 * This method takes four integer values and checks that they are within 0 - 255 before returning a {@link Color} composed of these values.
 		 * 
 		 * @param red
 		 *            - the red component to be checked.
@@ -107,7 +121,7 @@ public class ColTools
 
 		public static Color interpolateColours(Color colOne, Color colTwo)
 			{
-				return new Color(((colOne.getRed() + colTwo.getRed()) / 2), ((colOne.getGreen() + colTwo.getGreen()) / 2),
-						((colOne.getBlue() + colTwo.getBlue()) / 2), ((colOne.getAlpha() + colTwo.getAlpha()) / 2));
+				return new Color(((colOne.getRed() + colTwo.getRed()) / 2), ((colOne.getGreen() + colTwo.getGreen()) / 2), ((colOne.getBlue() + colTwo.getBlue()) / 2),
+						((colOne.getAlpha() + colTwo.getAlpha()) / 2));
 			}
 	}
