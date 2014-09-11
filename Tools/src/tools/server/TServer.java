@@ -91,14 +91,17 @@ public abstract class TServer implements Runnable
 														}
 												break;
 											}
-
-										// Create a new connection
-										clients.add(connection);
-
 										// Start a thread to deal with this new connection
 										Thread thread = new Thread(connection);
 										thread.start();
-										// Notify the server of the new connection and ask if another connection is acceptable
+
+										// Add the new connection
+										clients.add(connection);
+
+										// Send a message to the client to inform it of its unique ID
+										sendToClient(0L, new TString("ID:" + connection.uniqueID), connection.uniqueID);
+
+										// Notify the server of the new connection and ask if another connection is allowed
 										allowConnections = clientConnected(connection.uniqueID);
 									}
 								else

@@ -24,6 +24,7 @@ public abstract class TClient<DataType> implements Runnable
 	{
 		private Socket socket;
 		private boolean isConnected = true;
+		private long uniqueID = -1L;
 
 		/**
 		 * 
@@ -38,7 +39,7 @@ public abstract class TClient<DataType> implements Runnable
 					{
 						// Connect t server
 						socket = new Socket(hostAddress, port);
-						// Check that the server actually 
+						// Check that the server actually
 						ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
 						oos.writeObject(new TString("Testing"));
 						oos.flush();
@@ -85,11 +86,14 @@ public abstract class TClient<DataType> implements Runnable
 								if (object instanceof TString)
 									{
 										TString objectString = (TString) object;
+										// These pings are the servers way of knowing we are still here
 										if (objectString.string.equals("Server: Are_You_There?"))
-											{
-												// Confirms presence of client
-												sendObject(new TString("Client_Still_Here_0123456789"));
-											}
+											// Confirms presence of client
+											sendObject(new TString("Client_Still_Here_0123456789"));
+										// This is the servers way of sending us our uniqueID when we join
+										if (objectString.string.startsWith("ID:"))
+											// Extract the unique ID number from the string
+											uniqueID = Long.parseLong(objectString.string.substring(3));
 										continue;
 									}
 
@@ -109,7 +113,8 @@ public abstract class TClient<DataType> implements Runnable
 			}
 
 		/**
-		 * Sends an object to a {@link TServer}. Each {@link TClient} linked to the server will receive a copy of this object, including this client.
+		 * Sends an object to a {@link TServer}. Each {@link TClient} linked to the server will receive a copy of this object, including
+		 * this client.
 		 * 
 		 * @param object
 		 *            - The object to send to the server
@@ -150,6 +155,14 @@ public abstract class TClient<DataType> implements Runnable
 		public final void disconnect()
 			{
 				sendObject(new TString("Client_Disconnected_0123456789"));
+			}
+
+		/**
+		 * @return - The uniqueID assigned to this client by the server (or -1L if not yet recieved).
+		 */
+		public final long getUniqueID()
+			{
+				return uniqueID;
 			}
 
 		/**
