@@ -22,15 +22,15 @@ public class WindowTools
 			}
 
 		/**
-		 * @param message
+		 * @param question
 		 *            - The yes/no question to ask the user
 		 * @param heading
 		 *            - The message to display in the titlebar of the window
 		 * @return - <code>true</code> if the user selects 'yes' otherwise <code>false</code>.
 		 */
-		public static boolean confirmationWindow(String message, String heading)
+		public static boolean confirmationWindow(String question, String heading)
 			{
-				int answer = JOptionPane.showConfirmDialog(null, message, heading, JOptionPane.YES_NO_OPTION);
+				int answer = JOptionPane.showConfirmDialog(null, question, heading, JOptionPane.YES_NO_OPTION);
 
 				if (answer == JOptionPane.YES_OPTION)
 					{

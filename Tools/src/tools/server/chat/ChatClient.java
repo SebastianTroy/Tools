@@ -1,9 +1,10 @@
-package tools.server;
+package tools.server.chat;
 
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import tools.Rand;
+import tools.server.TClient;
 
 /**
  * A simple example implementation of {@link TClient}.
@@ -51,7 +52,7 @@ public class ChatClient extends TClient<String>
 		protected final void processObject(long senderID, String message, boolean personal)
 			{
 				// If server is contacting only us, the message is our unique ID
-				if (personal)
+				if (senderID == 0L && personal)
 					clientID = message;
 				else
 					messages.add(message);

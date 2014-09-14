@@ -22,7 +22,7 @@ import tools.WindowTools;
  * 
  * @author Sebastian Troy
  */
-public abstract class TServer implements Runnable
+public abstract class TServer<DataType> implements Runnable
 	{
 		private ServerSocket serverSocket;
 
@@ -71,51 +71,49 @@ public abstract class TServer implements Runnable
 		public final void run()
 			{
 				while (running)
-					{
-						try
-							{
-								// Wait for someone to connect to us
-								Socket socket = serverSocket.accept();
+					try
+						{
+							// Wait for someone to connect to us
+							Socket socket = serverSocket.accept();
 
-								// The first connection is always allowed, after then, each connection decides if another is allowed
-								if (allowConnections)
-									{
-										Connection connection = new Connection(socket);
-										while (true)
-											{
-												for (Connection c : clients)
-													if (c.uniqueID == connection.uniqueID)
-														{
-															connection = new Connection(socket);
-															continue;
-														}
-												break;
-											}
-										// Start a thread to deal with this new connection
-										Thread thread = new Thread(connection);
-										thread.start();
+							// The first connection is always allowed, after then, each connection decides if another is allowed
+							if (allowConnections)
+								{
+									Connection connection = new Connection(socket);
+									while (true)
+										{
+											for (Connection c : clients)
+												if (c.uniqueID == connection.uniqueID)
+													{
+														connection = new Connection(socket);
+														continue;
+													}
+											break;
+										}
+									// Start a thread to deal with this new connection
+									Thread thread = new Thread(connection);
+									thread.start();
 
-										// Add the new connection
-										clients.add(connection);
+									// Add the new connection
+									clients.add(connection);
 
-										// Send a message to the client to inform it of its unique ID
-										sendToClient(0L, new TString("ID:" + connection.uniqueID), connection.uniqueID);
+									// Send a message to the client to inform it of its unique ID
+									sendToClient(new TString("ID:" + connection.uniqueID), connection.uniqueID);
 
-										// Notify the server of the new connection and ask if another connection is allowed
-										allowConnections = clientConnected(connection.uniqueID);
-									}
-								else
-									socket.close();
-							}
-						catch (SocketException e)
-							{
-								// Do nothing, this is expected to occur whenever the server is stopped
-							}
-						catch (IOException e)
-							{
-								e.printStackTrace();
-							}
-					}
+									// Notify the server of the new connection and ask if another connection is allowed
+									allowConnections = clientConnected(connection.uniqueID);
+								}
+							else
+								socket.close();
+						}
+					catch (SocketException e)
+						{
+							// Do nothing, this is expected to occur whenever the server is stopped
+						}
+					catch (IOException e)
+						{
+							e.printStackTrace();
+						}
 			}
 
 		/**
@@ -144,6 +142,17 @@ public abstract class TServer implements Runnable
 			}
 
 		/**
+		 * <strong>Warning: </strong>This method is called by multiple threads so when dealing with the object, steps should be made to
+		 * ensure safe concurrency.
+		 * 
+		 * @param senderID
+		 *            - The uniqueID of the client that sent the object.
+		 * @param object
+		 *            - The object sent to the server by the client.
+		 */
+		protected abstract void processObject(long senderID, DataType object);
+
+		/**
 		 * This method causes the server to finish sending its current message and then to finish executing.
 		 */
 		protected final void closeServer()
@@ -169,60 +178,82 @@ public abstract class TServer implements Runnable
 			}
 
 		/**
-		 * This method sends a copy of specified object to all connected {@link TClient}s.
+		 * This method sends a copy of specified object to all connected {@link TClient}s. This method is thread safe.
 		 * 
 		 * @param object
 		 *            - An Object which each {@link TClient} will receive a copy of.
 		 * @note - TClient&ltT>s can only accept Objects of type T.
 		 */
-		protected final synchronized void sendToAll(long senderID, Object object)
+		protected final synchronized void sendToAll(long senderID, DataType object)
 			{
 				for (Connection c : clients)
-					{
-						if (c.acceptingObjects)
-							try
-								{
-									ObjectOutputStream oos = new ObjectOutputStream(c.socket.getOutputStream());
-									oos.writeObject(new TPacket(senderID, object, false));
-									oos.flush();
-								}
-							catch (Exception e)
-								{
-									e.printStackTrace();
-								}
-					}
+					if (c.acceptingObjects)
+						try
+							{
+								ObjectOutputStream oos = new ObjectOutputStream(c.socket.getOutputStream());
+								oos.writeObject(new TPacket(senderID, object, false));
+								oos.flush();
+							}
+						catch (Exception e)
+							{
+								e.printStackTrace();
+							}
 			}
 
 		/**
-		 * This method sends a copy of specified object to a specified {@link TClient}.
+		 * This method sends a copy of specified object to a specified {@link TClient}. This method is thread safe.
 		 * 
 		 * @param object
 		 *            - An Object which the {@link TClient} will receive a copy of.
 		 * @param clientID
 		 *            - The unique ID of the {@link TClient} to which the object should be sent.
 		 */
-		protected final synchronized void sendToClient(long senderID, Object object, long clientID)
+		protected final synchronized void sendToClient(long senderID, DataType object, long clientID)
 			{
 				for (Connection c : clients)
-					{
-						if (c.uniqueID == clientID && c.acceptingObjects)
-							try
-								{
-									ObjectOutputStream oos = new ObjectOutputStream(c.socket.getOutputStream());
-									oos.writeObject(new TPacket(senderID, object, true));
-									oos.flush();
-									break;
-								}
-							catch (Exception e)
-								{
-									e.printStackTrace();
-								}
-					}
+					if (c.uniqueID == clientID && c.acceptingObjects)
+						try
+							{
+								ObjectOutputStream oos = new ObjectOutputStream(c.socket.getOutputStream());
+								oos.writeObject(new TPacket(senderID, object, true));
+								oos.flush();
+								break;
+							}
+						catch (Exception e)
+							{
+								e.printStackTrace();
+							}
 			}
 
 		/**
-		 * Each time a client connects, this method is called. If the server should be ready for a new connection immediately, this should return
-		 * <code>true</code>. If not the server can be told to accept connections again at a later time.
+		 * This method is used only by the server to communicate with the {@link TClient} in a way that is hidden from the end user. This
+		 * method is thread safe.
+		 * 
+		 * @param hiddenMessage
+		 *            - The message to be sent to the client
+		 * @param clientID
+		 *            - The uniqueID of the client which will receive the message
+		 */
+		private final synchronized void sendToClient(TString hiddenMessage, long clientID)
+			{
+				for (Connection c : clients)
+					if (c.uniqueID == clientID && c.acceptingObjects)
+						try
+							{
+								ObjectOutputStream oos = new ObjectOutputStream(c.socket.getOutputStream());
+								oos.writeObject(new TPacket(0L, hiddenMessage, true));
+								oos.flush();
+								break;
+							}
+						catch (Exception e)
+							{
+								e.printStackTrace();
+							}
+			}
+
+		/**
+		 * Each time a client connects, this method is called. If the server should be ready for a new connection immediately, this should
+		 * return <code>true</code>. If not the server can be told to accept connections again at a later time.
 		 * 
 		 * @param clientIP
 		 *            - A string of the IP address of the client
@@ -238,8 +269,8 @@ public abstract class TServer implements Runnable
 		protected abstract void clientDisconnected(long uniqueID);
 
 		/**
-		 * One of these classes is created for each client that connects to the chat server. It listens for input continuously and when it receives a message,
-		 * sends it out to every connected client.
+		 * One of these classes is created for each client that connects to the chat server. It listens for input continuously and when it
+		 * receives a message, sends it out to every connected client.
 		 * 
 		 * @author Sebastian Troy
 		 */
@@ -262,6 +293,7 @@ public abstract class TServer implements Runnable
 						clientDisconnected(uniqueID);
 					}
 
+				@SuppressWarnings("unchecked")
 				@Override
 				public final void run()
 					{
@@ -271,50 +303,48 @@ public abstract class TServer implements Runnable
 								socket.setSoTimeout(5000);
 
 								while (true)
-									{
-										try
-											{
-												// prepare to receive String inputs from the clients
-												ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+									try
+										{
+											// prepare to receive String inputs from the clients
+											ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 
-												Object object = ois.readObject();
+											Object object = ois.readObject();
 
-												// Check to see if client has disconnected or is confirming presence
-												if (object instanceof TString)
-													{
-														TString objectString = (TString) object;
-														if (objectString.string.equals("Client_Disconnected_0123456789"))
-															{
-																disconnected();
-																socket.close();
-																break;
-															}
-														else if (objectString.string.equals("Client_Still_Here_0123456789"))
-															{
-																confirmedConnection = true;
-															}
-														continue;
-													}
-												// Wait for another object to be sent then pass to every client (including the one that sent it)
-												sendToAll(uniqueID, object);
+											// Check to see if client has disconnected or is confirming presence
+											if (object instanceof TString)
+												{
+													TString objectString = (TString) object;
+													if (objectString.string.equals("Client_Disconnected_0123456789"))
+														{
+															disconnected();
+															socket.close();
+															break;
+														}
+													else if (objectString.string.equals("Client_Still_Here_0123456789"))
+														{
+															confirmedConnection = true;
+														}
+													continue;
+												}
+											// Tell the server that an object was sent, and by whom
+											processObject(uniqueID, (DataType) object);
 
-												confirmedConnection = true;
-											}
-										// We are expecting these every 5 seconds or so, and don't want to leave the while loop
-										catch (SocketTimeoutException e)
-											{
-												// no data recieved for 5 seconds, check if client still connected
-												if (confirmedConnection)
-													{
-														confirmedConnection = false;
-														sendToAll(uniqueID, new TString("Server: Are_You_There?"));
-													}
-												else
-													{
-														disconnected();
-													}
-											}
-									}
+											confirmedConnection = true;
+										}
+									// We are expecting these every 5 seconds or so, and don't want to leave the while loop
+									catch (SocketTimeoutException e)
+										{
+											// no data recieved for 5 seconds, check if client still connected
+											if (confirmedConnection)
+												{
+													confirmedConnection = false;
+													sendToClient(new TString("Server: Are_You_There?"), uniqueID);
+												}
+											else
+												{
+													disconnected();
+												}
+										}
 							}
 						catch (SocketException e)
 							{

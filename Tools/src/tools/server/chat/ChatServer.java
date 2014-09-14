@@ -1,13 +1,22 @@
-package tools.server;
+package tools.server.chat;
+
+import java.util.ArrayList;
+
+import tools.server.TServer;
 
 /**
  * A simple example implementation of a {@link TServer}.
  * 
  * @author Sebastian Troy
  */
-public class ChatServer extends TServer
+public class ChatServer extends TServer<String>
 	{
 		public static final int PORT = 10301;
+		
+		/**
+		 * Keep a list of all messages sent this session so we can send them to clients as they join.
+		 */
+		private final ArrayList<String> messageLog = new ArrayList<String>();
 
 		public ChatServer()
 			{
@@ -35,6 +44,9 @@ public class ChatServer extends TServer
 			{
 				// Inform the client of its uniqueID (0L is an ID reserved for the server).
 				sendToClient(0L, "" + uniqueID, uniqueID);
+				// Get the client up to date with past messages
+				for (String s : messageLog)
+					sendToClient(-1L, s, uniqueID);
 				return true;
 			}
 
@@ -44,4 +56,11 @@ public class ChatServer extends TServer
 		@Override
 		protected void clientDisconnected(long uniqueID)
 			{}
+
+		@Override
+		protected void processObject(long senderID, String message)
+			{
+				messageLog.add(message);
+				sendToAll(senderID, message);
+			}
 	}

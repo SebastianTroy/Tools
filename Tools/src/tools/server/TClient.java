@@ -46,7 +46,7 @@ public abstract class TClient<DataType> implements Runnable
 					}
 				catch (ConnectException e)
 					{
-						WindowTools.informationWindow("Server refused connection", "Warning");
+						WindowTools.informationWindow("Server refused connection:\n\nMake sure that the server is running &\nif connecting to an external IP address,\nthat they have port forwading set up.\n\nHelp:\nhttp://troydev.proggle.net/projects-hex-nations.php", "Warning");
 						isConnected = false;
 					}
 				catch (UnknownHostException e)
@@ -83,7 +83,7 @@ public abstract class TClient<DataType> implements Runnable
 								Object object = packet.object;
 
 								// If the object is a secret message from the server
-								if (object instanceof TString)
+								if (packet.personal && object instanceof TString)
 									{
 										TString objectString = (TString) object;
 										// These pings are the servers way of knowing we are still here
