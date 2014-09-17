@@ -31,13 +31,11 @@ public class StringTools
 						int tempIndex = newLineIndices.get(currentLine - 1);
 						double length = 0;
 						// Work out where to place the next 'new line' character
-						while (tempIndex < string.length())
-							do
+						while (tempIndex < string.length() && length - 2 < lineWidth)
 								{
 									length = fm.stringWidth(string.substring(newLineIndices.get(currentLine - 1), tempIndex));
 									tempIndex++;
 								}
-							while (length - 2 < lineWidth);
 						// If this isn't the last line
 						if (tempIndex < string.length())
 							{
