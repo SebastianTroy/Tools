@@ -13,6 +13,7 @@ import tComponents.TComponent;
 import tComponents.components.TCollection;
 import tComponents.components.TMenu;
 import tComponents.components.TTextField;
+import tools.StringTools;
 import tools.server.TClient;
 import tools.server.TServer;
 
@@ -154,56 +155,17 @@ public class TChatBox extends TCollection implements KeyListener
 
 						setWidth(messageDisplay.getWidthD() - 20);
 
-						setlineIndices();
+						wrapMessage();
 					}
 
-				private final void setlineIndices()
+				private final void wrapMessage()
 					{
 						FontMetrics fm = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).getGraphics().getFontMetrics(font);
 						lineHeight = fm.getHeight();
+						
+						splitMessage = StringTools.wrapString(fm, message, getWidthI() - 20);
 
-						ArrayList<Integer> newLineIndices = new ArrayList<Integer>((fm.stringWidth(message) / (getWidthI() - 20)) + 1);
-
-						newLineIndices.add(0);
-						int currentLine = 1;
-						while (true)
-							{
-								int tempIndex = newLineIndices.get(currentLine - 1);
-								double length = 0;
-								// Work out where to place the next 'new line' character
-								while (length < getWidthI() - 22 && tempIndex < message.length())
-									{
-										length = fm.stringWidth(message.substring(newLineIndices.get(currentLine - 1), tempIndex));
-										tempIndex++;
-									}
-								// If this isn't the last line
-								if (tempIndex < message.length())
-									{
-										// Make sure the lines only wrap after spaces
-										int lastSpaceIndex = message.substring(0, tempIndex).lastIndexOf(' ');
-										// If a space was found && the space is on the most recent line
-										if (lastSpaceIndex != -1 && lastSpaceIndex > newLineIndices.get(currentLine - 1))
-											tempIndex = lastSpaceIndex + 1;
-
-										newLineIndices.add(tempIndex);
-										currentLine++;
-									}
-								else
-									// We have finished processing the message
-									{
-										newLineIndices.add(tempIndex);
-										break;
-									}
-							}
-
-						this.splitMessage = new String[newLineIndices.size() - 1];
-
-						for (int i = 0; i < this.splitMessage.length; i++)
-							{
-								this.splitMessage[i] = message.substring(newLineIndices.get(i), newLineIndices.get(i + 1));
-							}
-
-						setHeight((this.splitMessage.length + 1) * lineHeight);
+						setHeight((splitMessage.length + 1) * lineHeight);
 					}
 
 				@Override
@@ -238,7 +200,7 @@ public class TChatBox extends TCollection implements KeyListener
 				public final void setWidth(double width)
 					{
 						super.setWidth(width);
-						setlineIndices();
+						wrapMessage();
 					}
 
 				@Override
