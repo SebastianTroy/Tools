@@ -142,6 +142,19 @@ public abstract class TServer<DataType> implements Runnable
 			}
 
 		/**
+		 * If you want to force a client to disconnect, call this method
+		 * 
+		 * @param clientID
+		 *            - The UniqueID of the client you wish to kick from the server.
+		 * @param reason
+		 *            - A final message to send to the client, explaining why they were disconnected.
+		 */
+		public final void kickClient(long clientID, String reason)
+			{
+				sendToClient(new TString("Kicked: " + reason), clientID);
+			}
+
+		/**
 		 * <strong>Warning: </strong>This method is called by multiple threads so when dealing with the object, steps should be made to
 		 * ensure safe concurrency.
 		 * 

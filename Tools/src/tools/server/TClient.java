@@ -46,7 +46,10 @@ public abstract class TClient<DataType> implements Runnable
 					}
 				catch (ConnectException e)
 					{
-						WindowTools.informationWindow("Server refused connection:\n\nMake sure that the server is running &\nif connecting to an external IP address,\nthat they have port forwading set up.\n\nHelp:\nhttp://troydev.proggle.net/projects-hex-nations.php", "Warning");
+						WindowTools
+								.informationWindow(
+										"Server refused connection:\n\nMake sure that the server is running &\nif connecting to an external IP address,\nthat they have port forwading set up.\n\nHelp:\nhttp://troydev.proggle.net/projects-hex-nations.php",
+										"Warning");
 						isConnected = false;
 					}
 				catch (UnknownHostException e)
@@ -94,6 +97,12 @@ public abstract class TClient<DataType> implements Runnable
 										if (objectString.string.startsWith("ID:"))
 											// Extract the unique ID number from the string
 											uniqueID = Long.parseLong(objectString.string.substring(3));
+										else if (objectString.string.startsWith("Kicked: "))
+											{
+												// Extract the unique ID number from the string
+												kickedFromServer(objectString.string.substring(7));
+												disconnect();
+											}
 										continue;
 									}
 
@@ -104,7 +113,7 @@ public abstract class TClient<DataType> implements Runnable
 					{
 						// If the client has disconnected while we are waiting for an object
 						if (e.toString().equals("java.net.SocketException: Connection reset"))
-							WindowTools.informationWindow("Server has Disconnected", "WARNING");
+							serverDisconnected();
 					}
 				catch (IOException | UncheckedIOException | ClassNotFoundException e)
 					{
@@ -135,6 +144,18 @@ public abstract class TClient<DataType> implements Runnable
 						e.printStackTrace();
 					}
 			}
+
+		/**
+		 * Called if there is an issue contacting the server which suggests that it has disconnected
+		 */
+		protected abstract void serverDisconnected();
+
+		/**
+		 * 
+		 * @param reason
+		 *            - A string from the server explaining why it forcibly disconnected this client
+		 */
+		protected abstract void kickedFromServer(String reason);
 
 		/**
 		 * Each time an object is returned from the server, this method is called.
