@@ -9,8 +9,8 @@ import tools.server.TClient;
 /**
  * A simple example implementation of {@link TClient}.
  * <p>
- * This class represents a very simple client for an instant messenger. It sends and receives Strings from the server but relies on another class to provide
- * them and to process/display them.
+ * This class represents a very simple client for an instant messenger. It sends and receives Strings from the server but relies on another
+ * class to provide them and to process/display them.
  * 
  * @author Sebastian Troy
  */
@@ -45,17 +45,19 @@ public class ChatClient extends TClient<String>
 				this.clientName = clientName;
 			}
 
-		/**
-		 * Whenever we receive a String from the server, stick it into an array until it is asked for.
-		 */
-		@Override
-		protected final void processObject(long senderID, String message, boolean personal)
+		public final void setClientName(String clientName)
 			{
-				// If server is contacting only us, the message is our unique ID
-				if (senderID == 0L && personal)
-					clientID = message;
-				else
-					messages.add(message);
+				this.clientName = clientName;
+			}
+
+		/**
+		 * @return - Each String returned represents a unique message. The format of each message is: "ipaddress:clientname:\n message"
+		 */
+		public final ArrayList<String> getMessages()
+			{
+				ArrayList<String> m = new ArrayList<String>();
+				messages.drainTo(m);
+				return m;
 			}
 
 		/**
@@ -78,17 +80,27 @@ public class ChatClient extends TClient<String>
 			}
 
 		/**
-		 * @return - Each String returned represents a unique message. The format of each message is: "ipaddress:clientname:\n message"
+		 * Whenever we receive a String from the server, stick it into an array until it is asked for.
 		 */
-		public final ArrayList<String> getMessages()
+		@Override
+		protected final void processObject(long senderID, String message, boolean personal)
 			{
-				ArrayList<String> m = new ArrayList<String>();
-				messages.drainTo(m);
-				return m;
+				// If server is contacting only us, the message is our unique ID
+				if (senderID == 0L && personal)
+					clientID = message;
+				else
+					messages.add(message);
 			}
 
-		public final void setClientName(String clientName)
+		@Override
+		protected void serverDisconnected()
 			{
-				this.clientName = clientName;
+				messages.add("0L:Server:Disconnected");
+			}
+
+		@Override
+		protected void kickedFromServer(String reason)
+			{
+				messages.add("0L:Server:Disconnected: " + reason);
 			}
 	}

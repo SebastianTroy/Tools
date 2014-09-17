@@ -107,7 +107,7 @@ public class TChatBox extends TCollection implements KeyListener
 					{
 						Message message = new Message(str);
 						if (new String(message.uniqueID).equals(lastSenderID))
-								message.setDisplayHeading(false);
+							message.setDisplayHeading(false);
 						else
 							lastSenderID = new String(message.uniqueID);
 
@@ -191,7 +191,7 @@ public class TChatBox extends TCollection implements KeyListener
 								else
 									// We have finished processing the message
 									{
-										newLineIndices.add(tempIndex - 1);
+										newLineIndices.add(tempIndex);
 										break;
 									}
 							}
@@ -220,7 +220,7 @@ public class TChatBox extends TCollection implements KeyListener
 
 						g.setColor(Color.BLACK);
 						for (int i = 0; i < this.splitMessage.length;)
-							g.drawString(splitMessage[i], getXI() + 10, getYI() + (displayHeading ?  lineHeight : 0) + (lineHeight * ++i));
+							g.drawString(splitMessage[i], getXI() + 10, getYI() + (displayHeading ? lineHeight - 1 : -1) + (lineHeight * ++i));
 					}
 
 				private final void setDisplayHeading(boolean displayHeading)
