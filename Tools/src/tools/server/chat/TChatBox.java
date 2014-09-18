@@ -28,7 +28,7 @@ public class TChatBox extends TCollection implements KeyListener
 		// Chat variables
 		private MessageDisplay messageDisplay;
 		private TTextField messageInput;
-		private String lastSenderID = "0";
+		private String lastSenderID = "0", lastSenderName = "xxx";
 
 		private final ChatClient client;
 		private Font font;
@@ -107,10 +107,24 @@ public class TChatBox extends TCollection implements KeyListener
 				for (String str : client.getMessages())
 					{
 						Message message = new Message(str);
-						if (new String(message.uniqueID).equals(lastSenderID))
-							message.setDisplayHeading(false);
+						if (message.uniqueID.equals(lastSenderID))
+							// User has changed their name
+							if (!message.senderName.equals(lastSenderName))
+								{
+									// Save the new senderName
+									String newName = new String(message.senderName);
+									// Give the message a name that indicates the change
+									message.senderName = lastSenderName + " -> " + message.senderName;
+									// Look for the new name next message
+									lastSenderName = newName;
+								}
+							else
+								message.setDisplayHeading(false);
 						else
-							lastSenderID = new String(message.uniqueID);
+							{
+								lastSenderID = message.uniqueID;
+								lastSenderName = message.senderName;
+							}
 
 						messageDisplay.add(message, false);
 						messageDisplay.setScrollBarScrollPercent(100);
@@ -140,8 +154,8 @@ public class TChatBox extends TCollection implements KeyListener
 
 		private class Message extends TComponent
 			{
-				private final String uniqueID, user;
-				private final String message;
+				private final String uniqueID, message;
+				private String senderName;
 				private String[] splitMessage;
 				private boolean displayHeading = true;
 				private int lineHeight;
@@ -150,7 +164,7 @@ public class TChatBox extends TCollection implements KeyListener
 					{
 						String[] subMessages = message.split(":", 3);
 						uniqueID = subMessages[0];
-						user = subMessages[1];
+						senderName = subMessages[1];
 						this.message = subMessages[2];
 
 						setWidth(messageDisplay.getWidthD());
@@ -176,7 +190,7 @@ public class TChatBox extends TCollection implements KeyListener
 						g.setColor(Color.GRAY);
 						if (displayHeading)
 							{
-								g.drawString(user + ":", getXI() + 5, getYI() + lineHeight);
+								g.drawString(senderName + ":", getXI() + 5, getYI() + lineHeight);
 								g.drawLine(getXI() + 5, getYI() + 5, getXI() + getWidthI() - 10, getYI() + 5);
 							}
 
