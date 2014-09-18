@@ -153,7 +153,7 @@ public class TChatBox extends TCollection implements KeyListener
 						user = subMessages[1];
 						this.message = subMessages[2];
 
-						setWidth(messageDisplay.getWidthD() - 20);
+						setWidth(messageDisplay.getWidthD());
 
 						wrapMessage();
 					}
@@ -162,8 +162,8 @@ public class TChatBox extends TCollection implements KeyListener
 					{
 						FontMetrics fm = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB).getGraphics().getFontMetrics(font);
 						lineHeight = fm.getHeight();
-						
-						splitMessage = StringTools.wrapString(fm, message, getWidthI() - 20);
+
+						splitMessage = StringTools.wrapString(fm, message, getWidthI() - 25);
 
 						setHeight((splitMessage.length + 1) * lineHeight);
 					}
@@ -199,7 +199,7 @@ public class TChatBox extends TCollection implements KeyListener
 				@Override
 				public final void setWidth(double width)
 					{
-						super.setWidth(width);
+						super.setWidth(width - 20);
 						wrapMessage();
 					}
 
@@ -218,6 +218,13 @@ public class TChatBox extends TCollection implements KeyListener
 				public MessageDisplay(double x, double y, double width, double height, boolean isVertical)
 					{
 						super(x, y, width, height, isVertical);
+					}
+
+				@Override
+				public final void add(TComponent component, boolean resize)
+					{
+						super.add(component, resize);
+						setWidth(getWidthD());
 					}
 
 				@Override

@@ -30,12 +30,13 @@ public class StringTools
 					{
 						int tempIndex = newLineIndices.get(currentLine - 1);
 						double length = 0;
-						// Work out where to place the next 'new line' character
-						while (tempIndex < string.length() && length - 2 < lineWidth)
-								{
-									length = fm.stringWidth(string.substring(newLineIndices.get(currentLine - 1), tempIndex));
-									tempIndex++;
-								}
+						// Work out where to place the next 'new line' character, place it so that we get the most chars possible that will
+						// fit on the line
+						while (tempIndex < string.length() && length < lineWidth - fm.charWidth('w'))
+							{
+								length = fm.stringWidth(string.substring(newLineIndices.get(currentLine - 1), tempIndex));
+								tempIndex++;
+							}
 						// If this isn't the last line
 						if (tempIndex < string.length())
 							{
@@ -51,7 +52,11 @@ public class StringTools
 						else
 							// We have finished processing the message
 							{
-								newLineIndices.add(tempIndex);
+								// If the last line is a single space or new line character, ignore it
+								String lastLine = string.substring(newLineIndices.get(currentLine-1), string.length());
+								if (!(lastLine.equals(" ") || lastLine.equals("\n")))
+									newLineIndices.add(string.length());
+
 								break;
 							}
 					}
